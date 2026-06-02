@@ -1,0 +1,108 @@
+# =============================================================================
+# Paperclip — VPS Deployment Environment Template
+# =============================================================================
+# Copy this file to .env, then fill in every value marked REQUIRED.
+# .env is listed in .gitignore and must never be committed.
+#
+# Generate strong random secrets with:
+#   openssl rand -base64 32
+#
+# Quick reference:
+#   tailscale ip -4          → your VPS Tailscale IP (for TAILSCALE_IP)
+#   tailscale cert <host>    → provision a TLS cert for HTTPS (optional)
+# =============================================================================
+
+
+# =============================================================================
+# DATABASE — PostgreSQL credentials
+# =============================================================================
+
+# REQUIRED — strong random password for the Postgres superuser
+# The database is never exposed to the host network; this protects against
+# container escape and any future network mis-configuration.
+DB_PASSWORD=CHANGE_ME
+
+# Optional overrides (defaults shown)
+# DB_USER=paperclip
+# DB_NAME=paperclip
+
+
+# =============================================================================
+# AUTHENTICATION
+# =============================================================================
+
+# REQUIRED — secret used to sign session tokens and cookies.
+# Must be at least 32 random characters. Rotating this invalidates all sessions.
+BETTER_AUTH_SECRET=CHANGE_ME
+
+
+# =============================================================================
+# DEPLOYMENT
+# =============================================================================
+
+# REQUIRED — the public URL clients use to reach this instance.
+# This is used for OAuth/OIDC redirect URIs and auth e-mails, so it must match
+# the address you actually browse to.
+#
+# Examples (pick the one that fits your setup):
+#   http://100.x.x.x:3100                         ← Tailscale IP (simplest)
+#   http://paperclip.tail12345.ts.net:3100         ← Tailscale MagicDNS hostname
+#   https://paperclip.tail12345.ts.net             ← HTTPS via `tailscale serve`
+PAPERCLIP_PUBLIC_URL=http://CHANGE_ME:3100
+
+# Your VPS's Tailscale IPv4 address.
+# The startup script (scripts/vps-start.sh) detects this automatically via
+# `tailscale ip -4`.  Set it explicitly here only if auto-detection fails.
+# TAILSCALE_IP=100.x.x.x
+
+# Set to true after you have created your first account to lock out new
+# self-registrations.  Leave false until you have signed up.
+PAPERCLIP_AUTH_DISABLE_SIGN_UP=false
+
+
+# =============================================================================
+# AI PROVIDER KEYS
+# =============================================================================
+# These are host-level defaults that are passed into the server process.
+# You can also configure keys per-adapter through the Paperclip web UI without
+# editing this file — the UI values take precedence.
+
+# Anthropic — Claude models
+# ANTHROPIC_API_KEY=sk-ant-...
+# ANTHROPIC_BASE_URL=               # Override for proxies / bedrock gateway
+
+# OpenAI / OpenAI-compatible
+# OPENAI_API_KEY=sk-...
+
+# Google — Gemini models
+# GEMINI_API_KEY=AIza...
+# GOOGLE_API_KEY=AIza...            # Alternative variable name (same key)
+
+# AWS Bedrock (if using Claude via Bedrock)
+# AWS_ACCESS_KEY_ID=
+# AWS_SECRET_ACCESS_KEY=
+# AWS_DEFAULT_REGION=us-east-1
+# ANTHROPIC_BEDROCK_BASE_URL=       # Set to enable Bedrock routing
+
+
+# =============================================================================
+# STORAGE  (optional — defaults to local disk inside the Docker volume)
+# =============================================================================
+# Switch to S3-compatible storage for easier off-host backups or multi-instance
+# deployments.  Local disk is fine for a single-VPS setup.
+
+# PAPERCLIP_STORAGE_PROVIDER=s3
+# PAPERCLIP_STORAGE_S3_BUCKET=my-bucket
+# PAPERCLIP_STORAGE_S3_REGION=us-east-1
+# PAPERCLIP_STORAGE_S3_ENDPOINT=       # Non-AWS endpoint (e.g. Cloudflare R2, MinIO)
+# PAPERCLIP_STORAGE_S3_PREFIX=paperclip/
+
+
+# =============================================================================
+# OPTIONAL TUNING
+# =============================================================================
+
+# Match the UID/GID of the user that should own files inside the paperclip
+# volume.  Defaults to 1000:1000 (standard first user on most Linux distros).
+# USER_UID=1000
+# USER_GID=1000

@@ -1,0 +1,97 @@
+# VPS production deployment with Tailscale network isolation.
+#
+# The server port is bound exclusively to the Tailscale interface IP so it is
+# only reachable from devices on your tailnet — never from the public internet.
+# The database is kept on a private Docker-internal network and never exposed
+# to the host at all.
+#
+# Prerequisites:
+#   1. Tailscale running on the VPS host (`sudo tailscale up`)
+#   2. A .env file at the repo root (copy ENV_TEMPLATE → .env and fill it in)
+#
+# Usage (via the wrapper script — recommended):
+#   ./scripts/vps-start.sh up -d          # start in background
+#   ./scripts/vps-start.sh down           # stop all services
+#   ./scripts/vps-start.sh logs -f server # tail server logs
+#   ./scripts/vps-start.sh pull && ./scripts/vps-start.sh up -d --build
+#
+# Or directly (set TAILSCALE_IP yourself first):
+#   TAILSCALE_IP=$(tailscale ip -4) docker compose -f docker/docker-compose.vps.yml up -d
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-paperclip}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+      POSTGRES_DB: ${DB_NAME:-paperclip}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  server:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    # Bind only to the Tailscale interface — blocks all public-internet access.
+    # TAILSCALE_IP is set by scripts/vps-start.sh; falls back to 127.0.0.1.
+    ports:
+      - "${TAILSCALE_IP:-127.0.0.1}:3100:3100"
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-paperclip}:${DB_PASSWORD}@db:5432/${DB_NAME:-paperclip}
+      PORT: "3100"
+      NODE_ENV: "production"
+      SERVE_UI: "true"
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set in .env}
+      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
+      PAPERCLIP_PUBLIC_URL: ${PAPERCLIP_PUBLIC_URL:?PAPERCLIP_PUBLIC_URL must be set in .env}
+      PAPERCLIP_MIGRATION_AUTO_APPLY: "true"
+      PAPERCLIP_AUTH_DISABLE_SIGN_UP: ${PAPERCLIP_AUTH_DISABLE_SIGN_UP:-false}
+      # AI provider keys — set whichever adapters you use.
+      # These act as host-level defaults; they can also be configured per-adapter
+      # through the Paperclip UI without touching this file.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+    volumes:
+      - paperclip-data:/paperclip
+    networks:
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Private bridge — no host ports on this network except the ones declared above.
+  internal:
+    driver: bridge
+
+volumes:
+  # Postgres data — survives container recreation and image upgrades.
+  pgdata:
+    driver: local
+  # Paperclip config, file storage, and automatic DB backups.
+  paperclip-data:
+    driver: local
