@@ -58,6 +58,10 @@ ARG USER_GID=1000
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
+  && curl https://cursor.com/install -fsS | bash \
+  && ([ -x /root/.local/bin/agent ] && ln -sf /root/.local/bin/agent /usr/local/bin/agent \
+     || [ -x /root/.cursor/bin/agent ] && ln -sf /root/.cursor/bin/agent /usr/local/bin/agent \
+     || true) \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \

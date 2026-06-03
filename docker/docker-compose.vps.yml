@@ -71,6 +71,12 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
     volumes:
       - paperclip-data:/paperclip
+      # Mount host CLI credential dirs so agents reuse the host's logged-in
+      # sessions instead of requiring explicit API keys. Log in on the host
+      # (`claude`, `cursor`, `codex`) and the container picks it up automatically.
+      - ${HOME}/.claude:/paperclip/.claude
+      - ${HOME}/.cursor:/paperclip/.cursor
+      - ${HOME}/.codex:/paperclip/.codex
     networks:
       - internal
     depends_on:
