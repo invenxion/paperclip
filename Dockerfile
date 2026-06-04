@@ -59,9 +59,6 @@ WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
   && curl https://cursor.com/install -fsS | bash \
-  && ([ -x /root/.local/bin/agent ] && ln -sf /root/.local/bin/agent /usr/local/bin/agent \
-     || [ -x /root/.cursor/bin/agent ] && ln -sf /root/.cursor/bin/agent /usr/local/bin/agent \
-     || true) \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
@@ -83,7 +80,8 @@ ENV NODE_ENV=production \
   PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
   PAPERCLIP_DEPLOYMENT_MODE=authenticated \
   PAPERCLIP_DEPLOYMENT_EXPOSURE=private \
-  OPENCODE_ALLOW_ALL_MODELS=true
+  OPENCODE_ALLOW_ALL_MODELS=true \
+  PATH=/root/.local/bin:/root/.cursor/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 VOLUME ["/paperclip"]
 EXPOSE 3100
