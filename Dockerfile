@@ -58,11 +58,13 @@ ARG USER_GID=1000
 WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
-  && curl https://cursor.com/install -fsS | bash \
-  && cursor_bin="$(find /root/.local/bin /root/.cursor/bin -maxdepth 1 \( -name agent -o -name cursor-agent \) -executable 2>/dev/null | head -1)" \
+  && mkdir -p /opt/cursor-agent \
+  && HOME=/opt/cursor-agent curl https://cursor.com/install -fsS | bash \
+  && cursor_bin="$(find /opt/cursor-agent/.local/bin /opt/cursor-agent/.cursor/bin -maxdepth 1 \( -name agent -o -name cursor-agent \) -executable 2>/dev/null | head -1)" \
   && { [ -n "$cursor_bin" ] || { echo "ERROR: cursor agent CLI not found after install" && exit 1; }; } \
-  && install -m 755 "$cursor_bin" /usr/local/bin/agent \
-  && ln -sf /usr/local/bin/agent /usr/local/bin/cursor-agent \
+  && chmod -R a+rX /opt/cursor-agent \
+  && ln -sf "$cursor_bin" /usr/local/bin/agent \
+  && ln -sf "$cursor_bin" /usr/local/bin/cursor-agent \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
@@ -84,8 +86,7 @@ ENV NODE_ENV=production \
   PAPERCLIP_CONFIG=/paperclip/instances/default/config.json \
   PAPERCLIP_DEPLOYMENT_MODE=authenticated \
   PAPERCLIP_DEPLOYMENT_EXPOSURE=private \
-  OPENCODE_ALLOW_ALL_MODELS=true \
-  PATH=/root/.local/bin:/root/.cursor/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  OPENCODE_ALLOW_ALL_MODELS=true
 
 VOLUME ["/paperclip"]
 EXPOSE 3100
