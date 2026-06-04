@@ -76,6 +76,7 @@ services:
       # (`claude`, `cursor`, `codex`) and the container picks it up automatically.
       - ${HOME}/.claude:/paperclip/.claude
       - ${HOME}/.cursor:/paperclip/.cursor
+      - ${HOME}/.config/cursor:/paperclip/.config/cursor
       - ${HOME}/.codex:/paperclip/.codex
     networks:
       - internal
