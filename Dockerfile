@@ -59,7 +59,7 @@ WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
   && mkdir -p /opt/cursor-agent \
-  && HOME=/opt/cursor-agent curl https://cursor.com/install -fsS | bash \
+  && curl https://cursor.com/install -fsS | HOME=/opt/cursor-agent bash \
   && cursor_bin="$(find /opt/cursor-agent/.local/bin /opt/cursor-agent/.cursor/bin -maxdepth 1 \( -name agent -o -name cursor-agent \) -executable 2>/dev/null | head -1)" \
   && { [ -n "$cursor_bin" ] || { echo "ERROR: cursor agent CLI not found after install" && exit 1; }; } \
   && chmod -R a+rX /opt/cursor-agent \
