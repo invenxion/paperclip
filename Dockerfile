@@ -61,8 +61,8 @@ RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/cod
   && curl https://cursor.com/install -fsS | bash \
   && cursor_bin="$(find /root/.local/bin /root/.cursor/bin -maxdepth 1 \( -name agent -o -name cursor-agent \) -executable 2>/dev/null | head -1)" \
   && { [ -n "$cursor_bin" ] || { echo "ERROR: cursor agent CLI not found after install" && exit 1; }; } \
-  && ln -sf "$cursor_bin" /usr/local/bin/agent \
-  && ln -sf "$cursor_bin" /usr/local/bin/cursor-agent \
+  && install -m 755 "$cursor_bin" /usr/local/bin/agent \
+  && ln -sf /usr/local/bin/agent /usr/local/bin/cursor-agent \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
