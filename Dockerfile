@@ -59,6 +59,10 @@ WORKDIR /app
 COPY --chown=node:node --from=build /app /app
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
   && curl https://cursor.com/install -fsS | bash \
+  && cursor_bin="$(find /root/.local/bin /root/.cursor/bin -maxdepth 1 \( -name agent -o -name cursor-agent \) -executable 2>/dev/null | head -1)" \
+  && { [ -n "$cursor_bin" ] || { echo "ERROR: cursor agent CLI not found after install" && exit 1; }; } \
+  && ln -sf "$cursor_bin" /usr/local/bin/agent \
+  && ln -sf "$cursor_bin" /usr/local/bin/cursor-agent \
   && apt-get update \
   && apt-get install -y --no-install-recommends openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
